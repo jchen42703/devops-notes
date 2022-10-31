@@ -1,4 +1,6 @@
 .env
 terraform.tfstate
 .terraform/*
+.terraform.*
 .terraform*
+*.backup
