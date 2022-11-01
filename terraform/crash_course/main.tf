@@ -17,7 +17,7 @@ resource "aws_security_group" "instance" {
 }
 
 resource "aws_instance" "example" {
-  ami           = "${data.aws_ami.amazon-linux-2.id}"
+  ami           = var.ami
   instance_type = var.instance_type
   key_name      = var.key_name
   vpc_security_group_ids = [aws_security_group.instance.id]

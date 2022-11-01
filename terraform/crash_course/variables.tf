@@ -1,18 +1,18 @@
-data "aws_ami" "amazon-linux-2" {
- most_recent = true
+# data "aws_ami" "amazon-linux-2" {
+#  most_recent = true
 
 
- filter {
-   name   = "owner-alias"
-   values = ["amazon"]
- }
+#  filter {
+#    name   = "owner-alias"
+#    values = ["amazon"]
+#  }
 
 
- filter {
-   name   = "name"
-   values = ["amzn2-ami-hvm*"]
- }
-}
+#  filter {
+#    name   = "name"
+#    values = ["amzn2-ami-hvm*"]
+#  }
+# }
 
 variable "name" {
   description = "The name used to namespace all resources"
@@ -20,11 +20,11 @@ variable "name" {
   default     = "terraform-example"
 }
 
-# variable "ami" {
-#   description = "The AMI to run on the instance"
-#   type        = string
-#   default     = "ami-02f3416038bdb17fb"
-# }
+variable "ami" {
+  description = "The AMI to run on the instance (Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type)"
+  type        = string
+  default     = "ami-09d3b3274b6c5d4aa"
+}
 
 variable "instance_type" {
   description = "The instance type to use"
