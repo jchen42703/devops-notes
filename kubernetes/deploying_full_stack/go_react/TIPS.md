@@ -28,15 +28,22 @@ Basic deployments are similar to docker compose files.
    2. The IngressController service is the actual reverse proxy which receives the traffic.
    3. In this tutorial, we use the `NGINX IngressController`
 
-## Misc
+## Issues While Following Tutorial
+
+- Had to change the config version for `ingress-service.yaml` to `networking.k8s.io/v1`
+
+- Postgres deployment fails: `CrashLoopBackOff`
+  - Opening up `minikube dashboard` lets us see the reason for the failure:
+    - `MinimumReplicasUnavailable`: Deployment does not have minimum availability.
+    - https://devops.stackexchange.com/questions/3980/what-does-does-not-have-minimum-availability-in-k8s-mean
+    - **Use `kubectl describe pod <pod-name>` to get more specific debug info**
+  - Never ended up figuring out how to fix it :P
+
+## Commands
 
 `kubectl apply`
 
 - `apply` manages applications through files defining Kubernetes resources. It creates and updates resources in a cluster through running kubectl apply.
-
-Had to change the config version for `ingress-service.yaml` to `networking.k8s.io/v1`
-
-## Commands
 
 `kubectl apply -f k8s`
 
