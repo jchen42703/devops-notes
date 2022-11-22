@@ -10,6 +10,12 @@ Basic deployments are similar to docker compose files.
     - The deployment is X (what you want to do)
     - We can access X via Y (the Kubernetes service)
 
+**Minikube Pre-Reqs**
+
+1. Install `minikube`
+2. `minikube start`
+3. `minikube addons enable ingress`: added ingress controller
+
 **Workflow**
 
 1. Create docker images.
