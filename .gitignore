@@ -4,3 +4,4 @@ terraform.tfstate
 .terraform.*
 .terraform*
 *.backup
+node_modules
