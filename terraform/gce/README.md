@@ -43,6 +43,8 @@ terraform plan
 terraform apply
 ```
 
+5. To cleanup, run: `terraform destroy`
+
 ## Key Concepts Unique to GCP
 
 - `project` contains resources

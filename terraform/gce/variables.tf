@@ -29,7 +29,7 @@ variable "zone" {
 }
 
 variable "image" {
-    description = "Image to initialize the VM with"
+  description = "Image to initialize the VM with"
   type        = string
   default     = "debian-cloud/debian-11"
 }

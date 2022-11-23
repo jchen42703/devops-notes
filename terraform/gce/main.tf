@@ -1,8 +1,8 @@
 provider "google" {
-#   credentials = file("./compute-instance.json")
-  project     = var.project_name
-  region      = var.region
-  zone        = var.zone
+  #   credentials = file("./compute-instance.json")
+  project = var.project_name
+  region  = var.region
+  zone    = var.zone
 }
 
 resource "google_compute_network" "vpc_network" {
