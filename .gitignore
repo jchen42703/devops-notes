@@ -5,3 +5,4 @@ terraform.tfstate
 .terraform*
 *.backup
 node_modules
+compute-instance.json
