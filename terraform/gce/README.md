@@ -52,6 +52,7 @@ terraform apply
 - GCP uses the resource's `name` and `self_link` to identify it
   - Must refer to a resource by its `self_link`
 - Must create a service account and export that service account's key for Terraform to use.
+- GCP resource names can't have `_`, so the separator should be `-`
 
 ## Tips
 
