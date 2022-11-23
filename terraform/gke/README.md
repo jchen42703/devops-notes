@@ -47,6 +47,14 @@ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | gre
 
 - Provisions 2 nodes per zone, so the tutorial provisions 6 total nodes.
 
+## Using GKE with Terraform
+
+https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/using_gke_with_terraform
+
+**Tips**
+
+- Use the official GKE Terraform module (https://registry.terraform.io/modules/terraform-google-modules/kubernetes-engine/google/latest)
+
 ## Resources
 
 - [How to create a Google Kubernetes Engine Cluster in GCP with Terraform](https://www.youtube.com/watch?v=qf_fsOEj-OU)
