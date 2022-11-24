@@ -63,3 +63,118 @@ kubectl get ingress ingress-resource
 
 - The displayed IP will be the same as the result of `echo $NGINX_INGRESS_IP`
 - note: `ingress-resource` is just the name of the ingress service ([./k8s/ingress-service.yaml](./k8s/ingress-service.yaml))
+
+## Adding HTTPs and DNS
+
+https://medium.com/bluekiri/deploy-a-nginx-ingress-and-a-certitificate-manager-controller-on-gke-using-helm-3-8e2802b979ec
+(Tutorial is out of date)
+
+- https://cert-manager.io/docs/tutorials/getting-started-with-cert-manager-on-google-kubernetes-engine-using-lets-encrypt-for-ingress-ssl/
+
+```yaml
+# THIS VERSION IS OUT OF DATE, see the version I have in /k8s
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-resource
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    # HOST HERE
+    - host: poc-helm3.bluekiri.tech
+      http:
+        paths:
+          - path: /helloworld
+            backend:
+              serviceName: hello-app
+              servicePort: 8080
+```
+
+Create a namespace for the cert manager:
+
+```bash
+kubectl create namespace cert-manager
+```
+
+Then install the jetstack cert manager custom resource definition:
+
+https://cert-manager.io/docs/installation/helm/
+
+```bash
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.10.1 \
+  # --set installCRDs=true
+```
+
+Check that its running with:
+
+```bash
+kubectl get pods --namespace cert-manager
+```
+
+Add the issuer service:
+
+**Start with staging PLEASE and make sure that the `ingress` matches the name of your ingress service.**
+
+```yaml
+# issuer-staging.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: jxc1598@case.edu # ❗ Replace this with your email address
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          ingress:
+            name: web-ingress
+```
+
+Apply the issuer.
+
+Create the intermediate `secret.yaml` as a placeholder and `kubectl apply` it.
+
+> > This is a work around for a chicken-and-egg problem, where the ingress-gce controller won't update its forwarding rules unless it can first find the Secret that will eventually contain the SSL certificate. But Let's Encrypt won't sign the SSL certificate until it can get the special .../.well-known/acme-challenge/... URL which cert-manager adds to the Ingress and which must then be translated into Google Cloud forwarding rules, by the ingress-gce controller.
+
+After a couple of minutes, you should be able to curl it:
+
+```bash
+# need --insecure because it's going to be a staging cert
+curl -v --insecure https://easiermtl.com
+```
+
+Then, when you verify that the staging workflow works, do the production version:
+
+```yaml
+# issuer-prod.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: jxc1598@case.edu # ❗ Replace this with your email address
+    privateKeySecretRef:
+      name: letsencrypt-production
+    solvers:
+      - http01:
+          ingress:
+            name: web-ingress
+```
+
+Run `kubectl apply -f ./k8s/issuer-prod.yaml` to apply it.
+
+Debug with `kubectl describe issuers.cert-manager.io letsencrypt-production`
+
+## Cleanup
+
+See the docs
