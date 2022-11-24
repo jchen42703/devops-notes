@@ -173,12 +173,58 @@ stringData:
 
 > > This is a work around for a chicken-and-egg problem, where the ingress-gce controller won't update its forwarding rules unless it can first find the Secret that will eventually contain the SSL certificate. But Let's Encrypt won't sign the SSL certificate until it can get the special .../.well-known/acme-challenge/... URL which cert-manager adds to the Ingress and which must then be translated into Google Cloud forwarding rules, by the ingress-gce controller.
 
+**Couple of Important Points:**
+
+- Now, you need to change up the `ingress-service.yaml` a bit:
+
+  - Add letsencrypt-staging, some extra annoations, removed the rewrite-target (temporary because it interferes with the letsencrypt process, but is needed for final routing) and added `tls` rules
+
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+  name: ingress-service
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/issuer: "letsencrypt-staging"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    kubernetes.io/ingress.allow-http: "true"
+  spec:
+  tls:
+    - hosts:
+        - easiermtl.com
+      secretName: easiermtl-tls
+  rules:
+    - host: easiermtl.com
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: client-cluster-ip-service
+                port:
+                  number: 3000
+          - path: /api/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: api-cluster-ip-service
+                port:
+                  number: 8080
+  ```
+
+  - These are all super important for getting things to run properly!
+  - This config is located at [`./temporary/ingress-service`](./temporary/ingress-service.yaml)
+
 After a couple of minutes, you should be able to curl it:
 
 ```bash
 # need --insecure because it's going to be a staging cert
 curl -v --insecure https://easiermtl.com
 ```
+
+And it should say that it has an insecure certificate.
 
 When you verify that the staging workflow works, do the production version:
 
@@ -202,10 +248,13 @@ spec:
 
 Run `kubectl apply -f ./k8s/issuer-prod.yaml` to apply it.
 
-Update the issuer annotation:
+Update the issuer annotation and `kubectl apply` the changes to `ingress-service.yaml`:
 
-```bash
-kubectl annotate ingress ingress-service cert-manager.io/issuer=letsencrypt-production --overwrite
+```yaml
+# To use the correct cert
+cert-manager.io/issuer: "letsencrypt-production"
+# Add back this to prevent 404s
+nginx.ingress.kubernetes.io/rewrite-target: /$1
 ```
 
 Now, you should be able to do a regular curl!
