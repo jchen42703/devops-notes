@@ -6,7 +6,14 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     # nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/issuer: "letsencrypt-staging"
+    # cert-manager.io/issuer:
+    #   "letsencrypt-staging"
+    cert-manager.io/issuer:
+      "letsencrypt-production"
+      # This enables HTTP connections from Internet clients
+    kubernetes.io/ingress.allow-http: "true"
+    # # This tells Google Cloud to associate the External Load Balancer with the static IP which we created earlier
+    # kubernetes.io/ingress.global-static-ip-name: web-ip
 spec:
   tls:
     - hosts:

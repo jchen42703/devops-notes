@@ -58,38 +58,54 @@ echo $NGINX_INGRESS_IP
 Or you can just do:
 
 ```bash
-kubectl get ingress ingress-resource
+kubectl get ingress ingress-service
 ```
 
 - The displayed IP will be the same as the result of `echo $NGINX_INGRESS_IP`
-- note: `ingress-resource` is just the name of the ingress service ([./k8s/ingress-service.yaml](./k8s/ingress-service.yaml))
+- note: `ingress-service` is just the name of the ingress service ([./k8s/ingress-service.yaml](./k8s/ingress-service.yaml))
+
+## Adding Domain + HTTP
+
+1. Add an A record to the K8s cluster IP.
+2. Add the host to the ingress controller and `kubectl apply` it!
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-service
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target:
+      /$1
+      # This enables HTTP connections from Internet clients
+    kubernetes.io/ingress.allow-http: "true"
+spec:
+  rules:
+    - host: easiermtl.com
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: client-cluster-ip-service
+                port:
+                  number: 3000
+          - path: /api/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: api-cluster-ip-service
+                port:
+                  number: 8080
+```
+
+Now you should be able to go to the `http://$DOMAIN_NAME` link and see the client!
 
 ## Adding HTTPs and DNS
 
-https://medium.com/bluekiri/deploy-a-nginx-ingress-and-a-certitificate-manager-controller-on-gke-using-helm-3-8e2802b979ec
-(Tutorial is out of date)
-
-- https://cert-manager.io/docs/tutorials/getting-started-with-cert-manager-on-google-kubernetes-engine-using-lets-encrypt-for-ingress-ssl/
-
-```yaml
-# THIS VERSION IS OUT OF DATE, see the version I have in /k8s
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-resource
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-    # HOST HERE
-    - host: poc-helm3.bluekiri.tech
-      http:
-        paths:
-          - path: /helloworld
-            backend:
-              serviceName: hello-app
-              servicePort: 8080
-```
+https://cert-manager.io/docs/tutorials/getting-started-with-cert-manager-on-google-kubernetes-engine-using-lets-encrypt-for-ingress-ssl/
 
 Create a namespace for the cert manager:
 
@@ -135,12 +151,25 @@ spec:
     solvers:
       - http01:
           ingress:
-            name: web-ingress
+            name: ingress-service
 ```
 
 Apply the issuer.
 
 Create the intermediate `secret.yaml` as a placeholder and `kubectl apply` it.
+
+```yaml
+# secret.yaml
+# temp placeholder before configuring ingress
+apiVersion: v1
+kind: Secret
+metadata:
+  name: easiermtl-tls
+type: kubernetes.io/tls
+stringData:
+  tls.key: ""
+  tls.crt: ""
+```
 
 > > This is a work around for a chicken-and-egg problem, where the ingress-gce controller won't update its forwarding rules unless it can first find the Secret that will eventually contain the SSL certificate. But Let's Encrypt won't sign the SSL certificate until it can get the special .../.well-known/acme-challenge/... URL which cert-manager adds to the Ingress and which must then be translated into Google Cloud forwarding rules, by the ingress-gce controller.
 
@@ -151,7 +180,7 @@ After a couple of minutes, you should be able to curl it:
 curl -v --insecure https://easiermtl.com
 ```
 
-Then, when you verify that the staging workflow works, do the production version:
+When you verify that the staging workflow works, do the production version:
 
 ```yaml
 # issuer-prod.yaml
@@ -168,10 +197,22 @@ spec:
     solvers:
       - http01:
           ingress:
-            name: web-ingress
+            name: ingress-service
 ```
 
 Run `kubectl apply -f ./k8s/issuer-prod.yaml` to apply it.
+
+Update the issuer annotation:
+
+```bash
+kubectl annotate ingress ingress-service cert-manager.io/issuer=letsencrypt-production --overwrite
+```
+
+Now, you should be able to do a regular curl!
+
+```bash
+curl -v https://easiermtl.com
+```
 
 Debug with `kubectl describe issuers.cert-manager.io letsencrypt-production`
 
