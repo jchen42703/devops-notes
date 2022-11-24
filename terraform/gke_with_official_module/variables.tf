@@ -10,12 +10,12 @@ variable "cluster_name_suffix" {
 
 variable "region" {
   description = "The region to host the cluster in"
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "zone" {
   description = "The zone to host the cluster in"
-  default     = "us-central1-a"
+  default     = "us-east1-c"
 }
 
 
